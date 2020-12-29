@@ -1,20 +1,52 @@
-import { Module } from '@nestjs/common';
-import { GraphQLModule } from '@nestjs/graphql';
-import { doc } from 'prettier';
-import { join } from 'path';
+import {Module} from '@nestjs/common';
+import {GraphQLModule} from '@nestjs/graphql';
+import {doc} from 'prettier';
+import {join} from 'path';
 // import { AppController } from './app.controller';
 // import { AppService } from './app.service';
-import { RestaurantsModule } from './restaurants/restaurants.module';
+import * as Joi from 'joi';
+import {ConfigModule} from "@nestjs/config";
+import {RestaurantsModule} from './restaurants/restaurants.module';
+import {TypeOrmModule} from "@nestjs/typeorm";
+import {Restaurant} from "./restaurants/entities/restaurant.entity";
 
 @Module({
-  imports: [
-    GraphQLModule.forRoot({
-      // autoSchemaFile: join(process.cwd(), 'src/schema.gql'), will save schema in src folder
-      autoSchemaFile: true, // will save schema in memory
-    }),
-    RestaurantsModule,
-  ],
-  controllers: [],
-  providers: [],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true, // accessible from everywhere
+            envFilePath: process.env.NODE_ENV === 'dev' ? '.env.dev' : '.env.test',
+            ignoreEnvFile: process.env.NODE_ENV === 'prod', // In deployment  we dont use .env files
+            validationSchema: Joi.object({
+                NODE_ENV: Joi.string().valid('dev', 'prod').required(),
+                DB_HOST: Joi.string().required(),
+                DB_PORT: Joi.string().required(),
+                DB_USERNAME: Joi.string().required(),
+                DB_PASSWORD: Joi.string().required(),
+                DB_NAME: Joi.string().required(),
+            }),
+        }),
+
+        TypeOrmModule.forRoot({
+            type: 'postgres',
+            host: process.env.DB_HOST,
+            port: +process.env.DB_PORT,
+            username: process.env.DB_USERNAME,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            synchronize: process.env.NODE_ENV !== 'prod', // sync schema automatically
+            logging: process.env.NODE_ENV !== 'prod',
+            entities: [Restaurant],
+        }),
+
+        GraphQLModule.forRoot({
+            // autoSchemaFile: join(process.cwd(), 'src/schema.gql'), will save schema in src folder
+            autoSchemaFile: true, // will save schema in memory
+        }),
+
+        RestaurantsModule,
+    ],
+    controllers: [],
+    providers: [],
 })
-export class AppModule {}
+export class AppModule {
+}

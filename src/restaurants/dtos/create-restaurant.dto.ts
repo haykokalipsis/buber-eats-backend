@@ -1,18 +1,11 @@
 // dto - data transfer object. Arguments for queries, mutations here because its sexy?
 
-import {Args, ArgsType, Field} from "@nestjs/graphql";
+import {Field, InputType, OmitType} from "@nestjs/graphql";
+import {IsBoolean, IsString, Length} from "class-validator";
+import {Restaurant} from "../entities/restaurant.entity";
 
-@ArgsType()
-export class CreateRestaurantDto {
-    @Field( () => String)
-    name: string;
+@InputType()
+export class CreateRestaurantDto extends OmitType(Restaurant, ['id'], InputType)
+{
 
-    @Field( () => Boolean)
-    isVegan: boolean;
-
-    @Field( () => String)
-    address: string;
-
-    @Field( () => String)
-    ownerName: string;
 }
